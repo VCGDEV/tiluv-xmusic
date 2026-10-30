@@ -1,7 +1,7 @@
 // src/Canvas.cpp
 #include "Canvas.hpp"
 #include <iostream>
-#ifdef TALUV_HAS_SDL_IMAGE
+#ifdef TILUV_HAS_SDL_IMAGE
 #include <SDL2/SDL_image.h>
 #endif
 
@@ -78,7 +78,7 @@ SDL_Texture* Canvas::image(const std::string& path) {
     auto it = m_images.find(path);
     if (it != m_images.end()) return it->second;
 
-#ifdef TALUV_HAS_SDL_IMAGE
+#ifdef TILUV_HAS_SDL_IMAGE
     SDL_Surface* surface = IMG_Load(path.c_str());
 #else
     SDL_Surface* surface = SDL_LoadBMP(path.c_str()); // PNG/JPG need SDL2_image

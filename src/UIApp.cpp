@@ -38,7 +38,7 @@ bool UIApp::init() {
     m_ttfStarted = true;
 
     m_window = SDL_CreateWindow(
-        "Taluv-xmusic Emulator (240x320)",
+        "tiluv-xmusic Emulator (240x320)",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         SCREEN_WIDTH * m_scale, SCREEN_HEIGHT * m_scale,

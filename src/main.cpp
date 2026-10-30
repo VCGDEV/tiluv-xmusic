@@ -14,7 +14,7 @@ namespace {
 
 struct Options {
     std::string musicDir;
-    std::string skinPath = std::string(TALUV_ASSET_DIR) + "/config/skin_default.json";
+    std::string skinPath = std::string(TILUV_ASSET_DIR) + "/config/skin_default.json";
     int scale = 2;
 };
 
@@ -51,11 +51,11 @@ int main(int argc, char* argv[]) {
     Options options;
     if (!parseArgs(argc, argv, options)) return 1;
 
-    std::cout << "[Taluv-xmusic] Booting up system..." << std::endl;
+    std::cout << "[tiluv-xmusic] Booting up system..." << std::endl;
 
     auto player = std::make_unique<VLCPlayer>();
     if (!player->isReady()) {
-        std::cerr << "[Taluv-xmusic] Audio backend failed to start. On Fedora install:\n"
+        std::cerr << "[tiluv-xmusic] Audio backend failed to start. On Fedora install:\n"
                      "  sudo dnf install vlc-plugins-base vlc-plugin-ffmpeg vlc-plugin-pulseaudio" << std::endl;
         return 1;
     }
@@ -63,17 +63,17 @@ int main(int argc, char* argv[]) {
 
     Playlist playlist;
     const size_t trackCount = playlist.loadDirectory(options.musicDir);
-    std::cout << "[Taluv-xmusic] Found " << trackCount << " track(s) in " << options.musicDir << std::endl;
+    std::cout << "[tiluv-xmusic] Found " << trackCount << " track(s) in " << options.musicDir << std::endl;
 
     PlaybackController controller(std::move(player), std::move(playlist));
-    UIApp app(controller, ConfigManager::loadSkin(options.skinPath, TALUV_ASSET_DIR), options.scale);
+    UIApp app(controller, ConfigManager::loadSkin(options.skinPath, TILUV_ASSET_DIR), options.scale);
 
     if (!app.init()) {
-        std::cerr << "[Taluv-xmusic] Failed to initialize UI application." << std::endl;
+        std::cerr << "[tiluv-xmusic] Failed to initialize UI application." << std::endl;
         return 1;
     }
 
-    std::cout << "[Taluv-xmusic] Running emulator window. Controls:\n"
+    std::cout << "[tiluv-xmusic] Running emulator window. Controls:\n"
               << " - [SPACE] / [ENTER]  Play / Pause\n"
               << " - [<-] [->] or [,] [.]  Previous / Next track\n"
               << " - [UP] [DOWN] or [+] [-]  Volume\n"
@@ -82,6 +82,6 @@ int main(int argc, char* argv[]) {
 
     app.run();
 
-    std::cout << "[Taluv-xmusic] Shutting down gracefully." << std::endl;
+    std::cout << "[tiluv-xmusic] Shutting down gracefully." << std::endl;
     return 0;
 }

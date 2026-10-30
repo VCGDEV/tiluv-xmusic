@@ -2,7 +2,7 @@
   "name": "XpressMusic Classic",
   "wallpaper": "images/bg_retro.png",
   "font": {
-    "file": "fonts/PxPlus_IBM_VGA8.ttf",
+    "file": "fonts/PxPlus_IBM_VGA_8x16.ttf",
     "size": 16,
     "size_small": 12
   },
