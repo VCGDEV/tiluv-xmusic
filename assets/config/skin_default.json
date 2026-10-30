@@ -1,0 +1,29 @@
+{
+  "name": "XpressMusic Classic",
+  "wallpaper": "images/bg_retro.png",
+  "font": {
+    "file": "fonts/PxPlus_IBM_VGA8.ttf",
+    "size": 16,
+    "size_small": 12
+  },
+  "colors": {
+    "background": "#111111",
+    "text": "#E8E8E8",
+    "text_dim": "#8A8A8A",
+    "accent": "#00FF00",
+    "progress_track": "#333333"
+  },
+  "layout": {
+    "status":       [6, 2, 228, 16],
+    "cover":        [40, 26, 160, 160],
+    "title":        [8, 194, 224, 22],
+    "artist":       [8, 218, 224, 18],
+    "album":        [8, 236, 224, 18],
+    "progress_bar": [12, 266, 216, 6],
+    "time":         [8, 278, 224, 16]
+  },
+  "covers": {
+    "default": "images/cover_default.png",
+    "rules": []
+  }
+}

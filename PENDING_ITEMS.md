@@ -1,0 +1,208 @@
+# Pending Items
+
+Open-source modular slider phone, Nokia XpressMusic style. It must keep working in Mexico for at least 5 years.
+
+**Legend:** `[ ]` todo · `[x]` done · **P0** blocks the next milestone · **P1** needed for the phase · **P2** nice to have · ⚠️ risk or open question to research before buying or building
+
+---
+
+## Status snapshot (2026-10-30)
+
+| Area | State |
+|---|---|
+| Phase 1 hardware | Bought: Orange Pi Zero 2W (1 GB) + expansion board, ILI9341 2.4" SPI TFT, MAX98357 I2S amp, 8 Ω 3 W speaker, lab kit |
+| Desktop app | Builds on Fedora (SDL2 + LibVLC). The Now Playing screen, playlist, volume, skins and cover resolution are implemented (~1.3k LOC) |
+| On-device | Not started |
+| Phase 2 (connectivity) | Architecture only |
+
+---
+
+## Milestones
+
+| # | Milestone | Done when |
+|---|---|---|
+| M0 | Repo hygiene | Own git repo, license, assets and tests in place |
+| M1 | Desktop music player complete | Library browsing, shuffle/repeat and resume work in the emulator window |
+| M2 | Board bring-up | Armbian boots, SSH works, the TFT shows a test image and the speaker plays a WAV |
+| M3 | Music player on device | The app runs on the Pi at boot, driven by physical buttons, on the TFT and speaker |
+| M4 | Portable | Runs on battery with charging, battery level shown and screen sleep |
+| M5 | Cellular | LTE modem makes and receives VoLTE calls and SMS on a Mexican carrier |
+| M6 | Telegram | Telegram (TDLib) chat list, chat view and compose are usable |
+| M7 | Enclosure | Slider case with the slide open/closed sensor, all parts fitted |
+| M8 | Snake game | Snake is playable from the Games menu, on desktop and on device |
+
+---
+
+## M0: Repo hygiene
+
+- [ ] **P0** Run `git init` inside `tiluv-xmusic/`. Right now git falls back to `/home/vcgdev` as the repo root, so a `git add .` would pick up your whole home folder.
+- [ ] **P0** Pick one project name and use it everywhere. The folder is `tiluv-xmusic`, the README and binary say `Taluv` / `taluv_xmusic`, and the CMake project is `TalivXMusic`.
+- [ ] **P0** Add a `LICENSE`, e.g. GPL-3.0 for the software and CERN-OHL-S for the hardware. This is required for an open-source release.
+- [ ] **P0** Add the assets the default skin points to. They are missing today, so the app falls back to built-in defaults:
+  - [ ] `assets/fonts/PxPlus_IBM_VGA8.ttf` (VileR's "Ultimate Oldschool PC Font Pack", CC BY-SA 4.0; credit it in the README)
+  - [ ] `assets/images/bg_retro.png` (240x320)
+  - [ ] `assets/images/cover_default.png` (160x160)
+- [ ] **P1** Unit tests for `Playlist` and `PlaybackController` using a `FakePlayer : IPlayerController`, with GoogleTest or Catch2 through CMake `FetchContent`.
+- [ ] **P1** Add `.clang-format` and enable `-Wpedantic`. Add an ASan/UBSan build option for desktop debugging.
+- [ ] **P2** CI with GitHub Actions or Forgejo: build on Fedora plus an aarch64 cross build, then run the tests.
+- [ ] **P2** `hardware/` folder: wiring diagrams (KiCad or Fritzing), the BOM with prices and suppliers in Mexico, and datasheets.
+
+## M1: Desktop music player complete
+
+- [ ] **P1** Screen navigation stack (push/pop `IScreen`) and a main menu: Music, Games, Settings, later Telegram and Calls.
+- [ ] **P1** Library screen: Artists → Albums → Tracks.
+  - ⚠️ Parsing tags with LibVLC on every boot will be slow for big libraries on the Pi. Index once with TagLib and store the results in SQLite (`~/.local/share/taluv/library.db`), then rescan only files whose mtime changed. LibVLC stays the playback engine.
+- [ ] **P1** Shuffle and repeat (off / all / one).
+- [ ] **P1** Save and restore the last track, position and volume across restarts.
+- [ ] **P1** Settings screen: skin selection, backlight level, sleep timeout.
+- [ ] **P2** Equalizer presets through the `libvlc_audio_equalizer_*` API. This is the "XpressMusic" signature feature.
+- [ ] **P2** Long-press actions and key repeat in `Input`, such as seeking by holding next/prev.
+- [ ] **P2** On-screen text scrolling (marquee) for long titles.
+- [ ] **P2** Playlists (M3U) and a "recently played" list.
+
+## M2: Board bring-up (Orange Pi Zero 2W)
+
+### OS
+- [ ] **P0** Flash **Armbian** (Debian Bookworm or Trixie base, `current` mainline kernel) for the Zero 2W (Allwinner H618). Prefer it over the vendor Orange Pi image, which tends to stop getting updates. Long-term updates are part of the 5-year goal.
+- [ ] **P0** Headless first boot: Wi-Fi, SSH key, hostname, timezone `America/Mexico_City`.
+- [ ] **P1** Use a high-endurance A1/A2 microSD card (the Zero 2W has no eMMC).
+- [ ] **P1** Protect the SD card from wear: make the rootfs read-only (`overlayroot`), put logs in RAM, and keep music and user data on a separate partition.
+
+### Development workflow (Fedora → aarch64)
+- [ ] **P0** Choose a build strategy:
+  - **Option A (recommended to start):** build natively on the Pi over SSH, with VS Code Remote-SSH. Simple and slow, but fine for ~1.3k LOC.
+  - **Option B:** a Podman `arm64` Debian container on Fedora (`qemu-user-static`) with the same Debian release as Armbian, so the libraries match. Use it for heavy builds like TDLib.
+  - **Option C:** a real cross toolchain (`gcc-aarch64-linux-gnu`) plus a sysroot copied from the Pi. Fastest, but the most setup.
+- [ ] **P1** `scripts/deploy.sh`: rsync the binary and assets to the Pi, then restart the systemd service.
+
+### Display: ILI9341 over SPI
+- [ ] **P0** Wire the TFT to SPI1 on the 40-pin header. ⚠️ Check every pin against the official Zero 2W user manual before applying power.
+
+  | TFT pin | Signal | Zero 2W header (verify) |
+  |---|---|---|
+  | VCC | 3.3 V | pin 1 or 17 |
+  | GND | GND | pin 6 |
+  | SDI/MOSI | SPI1 MOSI | pin 19 |
+  | SDO/MISO | SPI1 MISO (optional) | pin 21 |
+  | SCK | SPI1 CLK | pin 23 |
+  | CS | SPI1 CS0 | pin 24 |
+  | DC/RS | any GPIO | TBD |
+  | RESET | any GPIO | TBD |
+  | LED (backlight) | PWM-capable GPIO through a transistor | TBD |
+
+- [ ] **P0** Driver: use the mainline **DRM** path rather than the old `fbtft` staging driver.
+  - Prefer `panel-mipi-dbi-spi` with an init firmware file for the ILI9341, or the `ili9341` tiny-DRM driver. Both expose `/dev/dri/cardN`.
+  - Write a device tree overlay (`hardware/dt/ili9341.dts`) and enable it with `armbian-add-overlay`.
+- [ ] **P0** Run SDL2 on the **KMSDRM** video backend (`SDL_VIDEODRIVER=kmsdrm`) with no X11 or Wayland. Check that Armbian's SDL2 package was built with KMSDRM support.
+- [ ] **P1** SPI clock tuning: start at 32 MHz, then measure FPS and tearing. The full 240x320x16 bpp frame is ~150 KB, so 30 FPS is realistic only if just the changed areas are redrawn.
+- [ ] **P1** Rotation and pixel format (RGB565). Make sure the app's 240x320 logical size matches the panel orientation.
+- [ ] **P1** Backlight control through PWM, for the sleep timeout and brightness setting.
+
+### Audio: MAX98357 over I2S
+- [ ] **P0** ⚠️ Confirm which **I2S/PCM pins (BCLK, LRCLK, DIN)** the H618 exposes on the Zero 2W 40-pin header, and that a mainline DT overlay can route them. This is the biggest Phase 1 hardware risk.
+  - Fallback: use the expansion board's analog audio out with a small analog amp (e.g. PAM8302).
+- [ ] **P0** DT overlay: `simple-audio-card` + the `maxim,max98357a` codec on the H618 I2S controller (`hardware/dt/max98357a.dts`). Check with `aplay -l` and `speaker-test -c1 -t wav`.
+- [ ] **P1** Wire SD_MODE so the amp can be shut down when idle (saves battery and avoids hiss), and set GAIN with the GAIN pin.
+- [ ] **P1** LibVLC on the Pi: force `--aout=alsa` and test long MP3/FLAC playback for CPU use and underruns.
+- [ ] Note: powered from 5 V into **8 Ω**, the MAX98357 gives ~1.4–1.8 W, not 3 W. That is fine for a phone speaker. 4 Ω would be louder but drains the battery faster.
+
+### Buttons
+- [ ] **P0** Choose a keypad layout: D-pad + OK, soft keys L/R, Call/End, the dedicated XpressMusic play/prev/next keys, volume +/-.
+- [ ] **P0** Use the `gpio-keys` DT overlay to map GPIOs to Linux key codes, so `Input` keeps working unchanged (as the README describes). Use internal pull-ups and set `debounce-interval`.
+- [ ] **P1** ⚠️ GPIO budget: count the free header pins after SPI, I2S and the TFT control lines. If too few remain, use an I2C GPIO expander (MCP23017 or PCF8574, both supported by the kernel with gpio-keys) or a key matrix (`gpio-matrix-keypad`).
+
+## M3: Music player on device
+
+- [ ] **P0** systemd service `taluv.service` that starts at boot with autologin-free KMSDRM and restarts on crash.
+- [ ] **P0** Asset path: install to `/usr/share/taluv` via `-DTALUV_ASSET_DIR` and a CMake `install()` target.
+- [ ] **P1** Fast boot: disable unused services, measure with `systemd-analyze`. Target: under 15 s to Now Playing.
+- [ ] **P1** Get music onto the device: a USB mass-storage gadget, or Wi-Fi with Samba/SFTP or `rsync`.
+- [ ] **P1** Check CPU and RAM use with the TFT, VLC and the library DB running together. Keep it well under 1 GB so Phase 2 has room.
+- [ ] **P2** Headphone jack detection to switch between speaker and headphones.
+
+## M4: Portable (power) (not bought yet)
+
+- [ ] **P0** ⚠️ Size the power system before buying. The Zero 2W needs 5 V, and an LTE modem has ~2 A peaks during transmit.
+  - 1S LiPo (3000–4000 mAh), plus a charger and power-path IC, plus a 5 V/3 A boost. All-in-one modules exist (e.g. IP5306-based boards), but check that they can't shut off at low load.
+  - Alternatively, run the modem directly from the battery (3.8 V nominal), which is what LTE modules are designed for.
+- [ ] **P1** Battery fuel gauge over I2C (MAX17048) → a battery icon in the status bar.
+- [ ] **P1** USB-C charging input.
+- [ ] **P1** Power button: graceful shutdown with a hold-to-power-off.
+- [ ] **P1** Idle power: screen off, amp shutdown, CPU governor `schedutil`, Wi-Fi power save. Measure current at each state with a USB meter.
+- [ ] **P2** Real suspend-to-RAM on the H618. ⚠️ Mainline support is limited, so plan for "screen-off idle" as the realistic low-power mode.
+
+## M5: Cellular, Mexico (Phase 2) (not bought yet)
+
+- [ ] **P0** ⚠️ **Mexico network reality:** 2G is shut down and 3G is being retired (Telcel, AT&T and Movistar now run on AT&T/Telcel). Lasting 5 years means **LTE with VoLTE** for voice. A 2G/3G-only modem (SIM800, SIM7600 in 3G mode) will not work.
+- [ ] **P0** Choose an LTE modem with the Mexican bands (**B2, B4/66, B5, B7, B28**; Altán/Red Compartida uses B28) and VoLTE support:
+  - Candidate: **Quectel EG25-G** (used in the PinePhone; Linux support is proven through ModemManager and eg25-manager; VoLTE has worked for the community on some carriers).
+  - Alternatives to evaluate: Quectel EC25-AF/EC25-A (check the bands), SIMCom A7670 series (cheap, LTE Cat-1).
+  - Interface: USB (through the expansion board) for data and AT commands; PCM or USB audio for calls.
+- [ ] **P0** ⚠️ Research whether Telcel/AT&T México enable VoLTE for non-homologated devices. Carriers may whitelist IMEIs or require IFT homologation, and this decides whether calls work at all. Test with a SIM before writing call UI code.
+- [ ] **P1** Software stack: **ModemManager** (D-Bus) for SMS, calls and data; `oFono` is the alternative. Add a C++ `ModemService` that wraps D-Bus with `sdbus-c++` and sits beside `PlaybackController`.
+- [ ] **P1** Call audio routing: modem PCM ↔ ALSA ↔ MAX98357 speaker plus a **microphone**, which is not in the BOM yet (e.g. an I2S MEMS mic like the INMP441, or the modem's analog mic input).
+- [ ] **P1** UI screens: dialer, incoming call (ring tone plus pausing music), SMS inbox/compose, contacts (SQLite), signal and operator in the status bar.
+- [ ] **P1** T9 text input in `Input` / a text entry widget. It is needed for SMS and messaging.
+- [ ] **P2** Mobile data for Telegram, with an APN per carrier.
+
+## M6: Telegram (Phase 2)
+
+WhatsApp is out of scope. Telegram is the only messaging app.
+
+- [ ] **P1** Get your own `api_id`/`api_hash` from my.telegram.org.
+- [ ] **P1** ⚠️ Building TDLib needs several GB of RAM, so don't compile it on the 1 GB Pi. Build it in the arm64 Podman container (Option B) or cross-compile, then ship the `.so`.
+- [ ] **P1** `TelegramService` using the TDLib JSON interface (`td_json_client`) on its own thread, posting events to the UI thread (same pattern as `VLCPlayer::getState()`, so no callbacks into the UI).
+- [ ] **P1** Screens: chat list, chat view, compose (T9), login (phone + code).
+- [ ] **P2** Limit TDLib's local DB and file cache size. Disable automatic media downloads.
+- [ ] **P1** RAM budget check: the app, VLC and TDLib must fit in 1 GB with zram swap.
+- [ ] **P2** Notifications: a status bar icon and a short tone for new messages, ducking the music volume.
+
+## M7: Enclosure & slider mechanism (Phase 3)
+
+- [ ] **P1** 3D-printed case (FreeCAD or OpenSCAD in `hardware/case/`): the top half holds the TFT and media keys, the bottom half holds the keypad, board and battery.
+- [ ] **P1** Slider rails: off-the-shelf slide hinges or printed rails. A flat flex cable or thin wires run between the halves.
+- [ ] **P1** Slide sensor: a hall sensor + magnet or a reed switch read through `gpio-keys` as a **switch event** (`EV_SW`). Opening the slider wakes the screen; closing it locks the keys.
+- [ ] **P2** "Modular" design: swappable bottom modules (keypad, battery, modem) with a defined connector pinout. Document the module interface in `hardware/MODULES.md`.
+- [ ] **P2** Custom PCB to replace the jumper wiring: a carrier board for the Zero 2W with the amp, keypad, power and modem connector.
+
+## M8: Snake game
+
+Pure C++ and SDL2, with no new dependencies. It can be built on desktop at any time after the M1 screen navigation stack.
+
+- [ ] **P1** `SnakeGame` logic class with no SDL types: grid, snake body, food, collisions, score. Unit-test it like `PlaybackController`.
+- [ ] **P1** `SnakeScreen : IScreen`, drawn through `Canvas` on a grid sized for 240x320 (e.g. 8 px cells → 30x38, leaving room for a score bar).
+- [ ] **P1** Fixed-step game loop: move the snake on a timer that is independent of the 30 FPS render loop, and speed up as the score rises.
+- [ ] **P1** Controls through the existing `InputAction`s (D-pad, OK = pause, End/Esc = back to the menu). Ignore a reverse into the snake's own body.
+- [ ] **P1** Pause automatically when the screen is left, a call comes in or the slider closes.
+- [ ] **P2** High score saved to disk.
+- [ ] **P2** Game colors and sprites from the active skin (`"snake": {...}` block in the skin JSON).
+- [ ] **P2** Sound effects (eat, game over) and an option to keep the music playing during the game.
+- [ ] **P2** Wrap-around walls or maze levels as game modes.
+
+---
+
+## 5-year durability checklist
+
+- [ ] Armbian `current` kernel with unattended security updates (or a documented manual update procedure).
+- [ ] Read-only root plus a separate data partition, to survive SD card wear and sudden power loss.
+- [ ] Data backup: contacts, settings and library DB exported to a file or over Wi-Fi.
+- [ ] Use LTE/VoLTE only for cellular (no 2G/3G dependency).
+- [ ] Spare parts: buy a second Zero 2W, TFT and amp now. Small dev boards often go out of stock.
+- [ ] Keep only common C++17 dependencies that Debian ships (SDL2, LibVLC, nlohmann-json, TagLib, SQLite, sdbus-c++), so they keep building on future Debian releases.
+- [ ] Watch for SDL3: SDL2 will stay in distributions for years, but plan a migration once SDL3 is standard in Debian.
+
+---
+
+## Shopping list for the next phases
+
+| Item | For | Notes |
+|---|---|---|
+| High-endurance microSD (32–64 GB) | M2 | A1/A2 rated |
+| Tactile buttons and/or I2C GPIO expander (MCP23017) | M2 | Depends on the GPIO count |
+| 1S LiPo 3000–4000 mAh + charger/power path + 5 V boost | M4 | Must handle 2–3 A peaks |
+| MAX17048 fuel gauge | M4 | I2C |
+| USB-C power meter | M4 | For measuring current draw |
+| LTE modem (EG25-G or equivalent) + antennas + nano-SIM holder | M5 | Confirm the Mexican bands and VoLTE first |
+| Microphone (INMP441 I2S or electret for the modem mic in) | M5 | Calls |
+| Hall sensor (e.g. A3144 / DRV5032) + magnet | M7 | Slider detection |
+| Slide hinge rails | M7 | |
