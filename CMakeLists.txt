@@ -4,6 +4,14 @@ project(tiluv-xmusic VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(TILUV_BUILD_TESTS "Build the unit tests (tests/)" ON)
+option(TILUV_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer (desktop debugging)" OFF)
+
+if(TILUV_SANITIZE)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
 # Find required packages
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
@@ -13,20 +21,36 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(libvlc REQUIRED libvlc)
 pkg_check_modules(nlohmann_json REQUIRED nlohmann_json)
 
+function(tiluv_warnings target)
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+endfunction()
+
+# Logic with no SDL or VLC dependency, shared by the app and the unit tests.
+set(CORE_SOURCES
+    src/ConfigManager.cpp
+    src/CoverResolver.cpp
+    src/PlaybackController.cpp
+    src/Playlist.cpp
+)
+add_library(tiluv-core STATIC ${CORE_SOURCES})
+target_include_directories(tiluv-core PUBLIC include ${nlohmann_json_INCLUDE_DIRS})
+tiluv_warnings(tiluv-core)
+
 file(GLOB SOURCES CONFIGURE_DEPENDS
     src/*.cpp
 )
+list(TRANSFORM CORE_SOURCES PREPEND "${CMAKE_SOURCE_DIR}/" OUTPUT_VARIABLE CORE_SOURCES_ABS)
+list(REMOVE_ITEM SOURCES ${CORE_SOURCES_ABS})
 
 add_executable(tiluv-xmusic ${SOURCES})
 
 target_include_directories(tiluv-xmusic PRIVATE
-    include
     ${libvlc_INCLUDE_DIRS}
-    ${nlohmann_json_INCLUDE_DIRS}
 )
 
 target_link_libraries(tiluv-xmusic
     PRIVATE
+    tiluv-core
     SDL2::SDL2
     SDL2_ttf::SDL2_ttf
     ${libvlc_LIBRARIES}
@@ -40,7 +64,7 @@ else()
     message(WARNING "SDL2_image not found: cover art limited to BMP. On Fedora: sudo dnf install SDL2_image-devel")
 endif()
 
-target_compile_options(tiluv-xmusic PRIVATE -Wall -Wextra)
+tiluv_warnings(tiluv-xmusic)
 
 # Screen resolution of the ILI9341 panel, and where skins/fonts/images live.
 # On the Orange Pi, point TILUV_ASSET_DIR at the installed assets folder.
@@ -50,3 +74,8 @@ target_compile_definitions(tiluv-xmusic PRIVATE
     SCREEN_HEIGHT=320
     TILUV_ASSET_DIR="${TILUV_ASSET_DIR}"
 )
+
+if(TILUV_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

@@ -1,5 +1,7 @@
 // src/ConfigManager.cpp
 #include "ConfigManager.hpp"
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -16,16 +18,17 @@ Color parseColor(const json& node, const char* key, Color fallback) {
     const std::string hex = node[key].get<std::string>();
     if (hex.size() != 7 && hex.size() != 9) return fallback;
     if (hex[0] != '#') return fallback;
-    try {
-        const unsigned long value = std::stoul(hex.substr(1), nullptr, 16);
-        if (hex.size() == 7) {
-            return Color{uint8_t(value >> 16), uint8_t(value >> 8), uint8_t(value), 255};
-        }
-        return Color{uint8_t(value >> 24), uint8_t(value >> 16), uint8_t(value >> 8), uint8_t(value)};
-    } catch (const std::exception&) {
+    // std::stoul alone would accept "#12ZZ56" as 0x12, and also "0x", signs and spaces.
+    const std::string digits = hex.substr(1);
+    if (!std::all_of(digits.begin(), digits.end(), [](unsigned char c) { return std::isxdigit(c) != 0; })) {
         std::cerr << "[ConfigManager] Warning: invalid colour '" << hex << "' for " << key << std::endl;
         return fallback;
     }
+    const unsigned long value = std::stoul(digits, nullptr, 16); // at most 8 digits, fits in 32 bits
+    if (hex.size() == 7) {
+        return Color{uint8_t(value >> 16), uint8_t(value >> 8), uint8_t(value), 255};
+    }
+    return Color{uint8_t(value >> 24), uint8_t(value >> 16), uint8_t(value >> 8), uint8_t(value)};
 }
 
 // Rects are written as [x, y, w, h].
@@ -58,8 +61,8 @@ SkinConfig ConfigManager::loadSkin(const std::string& jsonPath, const std::strin
 
     std::ifstream file(jsonPath);
     if (!file.is_open()) {
-        std::cerr << "[ConfigManager] Warning: could not open skin " << jsonPath
-                  << ", using built-in skin." << std::endl;
+        std::cerr << "[ConfigManager] Warning: could not open skin " << jsonPath << ", using built-in skin."
+                  << std::endl;
         return skin;
     }
 
@@ -119,7 +122,7 @@ SkinConfig ConfigManager::loadSkin(const std::string& jsonPath, const std::strin
                   << ". Remaining keys use defaults." << std::endl;
     }
 
-    std::cout << "[ConfigManager] Loaded skin '" << skin.name << "' with "
-              << skin.coverRules.size() << " cover rule(s)." << std::endl;
+    std::cout << "[ConfigManager] Loaded skin '" << skin.name << "' with " << skin.coverRules.size()
+              << " cover rule(s)." << std::endl;
     return skin;
 }

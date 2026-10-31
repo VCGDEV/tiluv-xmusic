@@ -5,6 +5,7 @@
 // Logical phone buttons. Screens react to these, never to raw keycodes, so the same code
 // works with the laptop keyboard and with GPIO buttons on the Orange Pi (exposed as a
 // keyboard through the gpio-keys device-tree overlay).
+// clang-format off
 enum class InputAction {
     None,
     Up, Down, Left, Right, Select, Back,           // navigation pad
@@ -12,5 +13,6 @@ enum class InputAction {
     VolumeUp, VolumeDown,
     Quit,                                          // emulator only
 };
+// clang-format on
 
 InputAction mapKey(SDL_Keycode key);

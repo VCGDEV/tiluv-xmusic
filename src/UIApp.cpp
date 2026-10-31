@@ -8,7 +8,7 @@
 namespace {
 // A music UI doesn't need 60 FPS; 30 halves CPU wake-ups, which matters on battery.
 constexpr Uint32 kFrameMs = 1000 / 30;
-}
+} // namespace
 
 UIApp::UIApp(PlaybackController& controller, SkinConfig skin, int scale)
     : m_controller(controller), m_skin(std::move(skin)), m_scale(scale) {}
@@ -37,13 +37,8 @@ bool UIApp::init() {
     }
     m_ttfStarted = true;
 
-    m_window = SDL_CreateWindow(
-        "tiluv-xmusic Emulator (240x320)",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH * m_scale, SCREEN_HEIGHT * m_scale,
-        SDL_WINDOW_SHOWN
-    );
+    m_window = SDL_CreateWindow("tiluv-xmusic Emulator (240x320)", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                SCREEN_WIDTH * m_scale, SCREEN_HEIGHT * m_scale, SDL_WINDOW_SHOWN);
     if (!m_window) {
         std::cerr << "[UIApp] SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         return false;

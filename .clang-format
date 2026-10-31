@@ -1,0 +1,23 @@
+# Matches the existing code style. Format with: clang-format -i src/*.cpp include/*.hpp tests/*.cpp tests/*.hpp
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++17
+IndentWidth: 4
+ColumnLimit: 120
+AccessModifierOffset: -4
+IndentCaseLabels: true
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortCaseLabelsOnASingleLine: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Attach
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 1
+SortIncludes: Never
+AlignTrailingComments:
+  Kind: Leave

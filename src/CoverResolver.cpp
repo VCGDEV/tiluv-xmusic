@@ -11,8 +11,7 @@ namespace {
 // ASCII-only case folding: good enough for "café tacvba" vs "Café Tacvba", since the
 // accented letters themselves must already match byte-for-byte in UTF-8.
 bool equalsIgnoreCase(const std::string& a, const std::string& b) {
-    return a.size() == b.size() &&
-           std::equal(a.begin(), a.end(), b.begin(), [](unsigned char x, unsigned char y) {
+    return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), [](unsigned char x, unsigned char y) {
                return std::tolower(x) == std::tolower(y);
            });
 }

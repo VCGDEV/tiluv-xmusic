@@ -22,8 +22,7 @@ std::string fileUrlToPath(const std::string& url) {
 
     std::string path;
     for (size_t i = prefix.size(); i < url.size(); ++i) {
-        if (url[i] == '%' && i + 2 < url.size() &&
-            std::isxdigit(static_cast<unsigned char>(url[i + 1])) &&
+        if (url[i] == '%' && i + 2 < url.size() && std::isxdigit(static_cast<unsigned char>(url[i + 1])) &&
             std::isxdigit(static_cast<unsigned char>(url[i + 2]))) {
             path += static_cast<char>(std::stoi(url.substr(i + 1, 2), nullptr, 16));
             i += 2;
@@ -50,14 +49,14 @@ PlaybackStatus toPlaybackStatus(libvlc_state_t state) {
 } // namespace
 
 VLCPlayer::VLCPlayer()
-    : m_vlcInstance(nullptr), m_mediaPlayer(nullptr), m_media(nullptr),
-      m_metadataReady(false), m_volume(80) {
+    : m_vlcInstance(nullptr), m_mediaPlayer(nullptr), m_media(nullptr), m_metadataReady(false), m_volume(80) {
     // Audio-only device: never open a video output window.
     const char* args[] = {"--no-video", "--quiet"};
     m_vlcInstance = libvlc_new(2, args);
     if (!m_vlcInstance) {
         std::cerr << "[VLCPlayer] Error: Could not initialize LibVLC instance "
-                     "(are the VLC plugins installed?)." << std::endl;
+                     "(are the VLC plugins installed?)."
+                  << std::endl;
         return;
     }
     m_mediaPlayer = libvlc_media_player_new(m_vlcInstance);
@@ -104,9 +103,7 @@ void VLCPlayer::play(const std::string& filepath) {
     // Read ID3 tags and extract embedded cover art into VLC's art cache, without blocking
     // the UI thread. The result is collected in refreshMetadata().
     libvlc_media_parse_with_options(
-        m_media,
-        static_cast<libvlc_media_parse_flag_t>(libvlc_media_parse_local | libvlc_media_fetch_local),
-        3000);
+        m_media, static_cast<libvlc_media_parse_flag_t>(libvlc_media_parse_local | libvlc_media_fetch_local), 3000);
 
     libvlc_media_player_set_media(m_mediaPlayer, m_media);
     libvlc_media_player_play(m_mediaPlayer);
@@ -171,7 +168,8 @@ PlayerState VLCPlayer::getState() const {
     state.positionMs = static_cast<int>(std::max<libvlc_time_t>(0, libvlc_media_player_get_time(m_mediaPlayer)));
     if (state.track.durationMs <= 0) {
         // Some files (e.g. VBR MP3 without a header) only report length once playing.
-        state.track.durationMs = static_cast<int>(std::max<libvlc_time_t>(0, libvlc_media_player_get_length(m_mediaPlayer)));
+        state.track.durationMs =
+            static_cast<int>(std::max<libvlc_time_t>(0, libvlc_media_player_get_length(m_mediaPlayer)));
     }
     return state;
 }

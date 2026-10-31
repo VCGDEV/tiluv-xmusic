@@ -42,7 +42,7 @@ void NowPlayingScreen::handleAction(InputAction action) {
         case InputAction::VolumeUp:   m_controller.changeVolume(kVolumeStep); break;
         case InputAction::Down:
         case InputAction::VolumeDown: m_controller.changeVolume(-kVolumeStep); break;
-        default: break;
+        default:                      break;
     }
 }
 
@@ -67,11 +67,11 @@ void NowPlayingScreen::render(Canvas& canvas) {
 
     // Status line: state on the left, volume centred, track position on the right.
     canvas.drawText(statusLabel(m_state.status), layout.status, colors.accent, FontSize::Small);
-    canvas.drawText("VOL " + std::to_string(m_state.volume), layout.status, colors.textDim,
-                    FontSize::Small, Align::Center);
+    canvas.drawText("VOL " + std::to_string(m_state.volume), layout.status, colors.textDim, FontSize::Small,
+                    Align::Center);
     if (!playlist.empty()) {
-        canvas.drawText(std::to_string(playlist.index() + 1) + "/" + std::to_string(playlist.size()),
-                        layout.status, colors.textDim, FontSize::Small, Align::Right);
+        canvas.drawText(std::to_string(playlist.index() + 1) + "/" + std::to_string(playlist.size()), layout.status,
+                        colors.textDim, FontSize::Small, Align::Right);
     }
 
     if (m_coverPath.empty() || !canvas.drawImage(m_coverPath, layout.cover)) {
@@ -92,14 +92,15 @@ void NowPlayingScreen::render(Canvas& canvas) {
 
     const TrackInfo& track = m_state.track;
     canvas.drawText(track.title, layout.title, colors.text, FontSize::Large, Align::Center);
-    canvas.drawText(track.artist.empty() ? "Unknown artist" : track.artist,
-                    layout.artist, colors.textDim, FontSize::Small, Align::Center);
+    canvas.drawText(track.artist.empty() ? "Unknown artist" : track.artist, layout.artist, colors.textDim,
+                    FontSize::Small, Align::Center);
     canvas.drawText(track.album, layout.album, colors.textDim, FontSize::Small, Align::Center);
 
     canvas.fillRect(layout.progressBar, colors.progressTrack);
     if (track.durationMs > 0) {
         Rect filled = layout.progressBar;
-        filled.w = static_cast<int>(static_cast<long long>(layout.progressBar.w) * m_state.positionMs / track.durationMs);
+        filled.w =
+            static_cast<int>(static_cast<long long>(layout.progressBar.w) * m_state.positionMs / track.durationMs);
         if (filled.w > layout.progressBar.w) filled.w = layout.progressBar.w;
         canvas.fillRect(filled, colors.accent);
     }

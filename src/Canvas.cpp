@@ -35,8 +35,7 @@ TTF_Font* openFont(const std::string& skinFont, int size) {
 
 } // namespace
 
-Canvas::Canvas(SDL_Renderer* renderer, const SkinConfig& skin)
-    : m_renderer(renderer), m_skin(skin) {}
+Canvas::Canvas(SDL_Renderer* renderer, const SkinConfig& skin) : m_renderer(renderer), m_skin(skin) {}
 
 Canvas::~Canvas() {
     clearTextCache();
@@ -114,8 +113,7 @@ void Canvas::clearTextCache() {
 
 const Canvas::TextTexture* Canvas::text(const std::string& value, Color color, FontSize size) {
     const std::string key = std::to_string(static_cast<int>(size)) + ':' +
-                            std::to_string((color.r << 24) | (color.g << 16) | (color.b << 8) | color.a) +
-                            ':' + value;
+                            std::to_string((color.r << 24) | (color.g << 16) | (color.b << 8) | color.a) + ':' + value;
     auto it = m_textCache.find(key);
     if (it != m_textCache.end()) return &it->second;
 

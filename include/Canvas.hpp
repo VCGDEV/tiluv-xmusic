@@ -42,6 +42,5 @@ public:
     void fillRect(const Rect& rect, Color color);
     void drawRect(const Rect& rect, Color color);
     bool drawImage(const std::string& path, const Rect& dst); // false if it can't be loaded
-    void drawText(const std::string& value, const Rect& box, Color color,
-                  FontSize size, Align align = Align::Left);
+    void drawText(const std::string& value, const Rect& box, Color color, FontSize size, Align align = Align::Left);
 };

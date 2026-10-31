@@ -24,14 +24,9 @@ void PlaybackController::update() {
 void PlaybackController::togglePlayPause() {
     switch (m_player->getState().status) {
         case PlaybackStatus::Playing:
-        case PlaybackStatus::Paused:
-            m_player->togglePause();
-            break;
-        case PlaybackStatus::Opening:
-            break;
-        default:
-            playCurrent();
-            break;
+        case PlaybackStatus::Paused:  m_player->togglePause(); break;
+        case PlaybackStatus::Opening: break;
+        default:                      playCurrent(); break;
     }
 }
 

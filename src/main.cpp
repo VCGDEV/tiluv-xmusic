@@ -56,7 +56,8 @@ int main(int argc, char* argv[]) {
     auto player = std::make_unique<VLCPlayer>();
     if (!player->isReady()) {
         std::cerr << "[tiluv-xmusic] Audio backend failed to start. On Fedora install:\n"
-                     "  sudo dnf install vlc-plugins-base vlc-plugin-ffmpeg vlc-plugin-pulseaudio" << std::endl;
+                     "  sudo dnf install vlc-plugins-base vlc-plugin-ffmpeg vlc-plugin-pulseaudio"
+                  << std::endl;
         return 1;
     }
     player->setVolume(80);

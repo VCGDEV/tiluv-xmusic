@@ -21,6 +21,27 @@ mkdir -p build && cd build && cmake .. && make
 | S | Stop |
 | Esc / Q | Quit |
 
+## Tests, sanitizers and formatting
+
+The playback logic, playlist, cover resolution and skin loading have no SDL or VLC dependency (the `tiluv-core`
+library), so they're unit tested with GoogleTest and a fake player.
+
+```bash
+sudo dnf install gtest-devel          # optional: without it, CMake downloads GoogleTest
+cmake -S . -B build && cmake --build build -j && ctest --test-dir build --output-on-failure
+
+# AddressSanitizer + UndefinedBehaviorSanitizer build, for desktop debugging
+sudo dnf install libasan libubsan
+cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DTILUV_SANITIZE=ON && cmake --build build-asan -j
+
+# Format (CI checks this with clang-format 23.1.3)
+pipx run clang-format==23.1.3 -i src/*.cpp include/*.hpp tests/*.cpp tests/*.hpp
+```
+
+Pass `-DTILUV_BUILD_TESTS=OFF` to skip the tests, e.g. when building on the Orange Pi.
+CI (`.github/workflows/ci.yml`) builds and tests on Fedora x86_64 with sanitizers and on Debian arm64 (the device's
+architecture), and checks formatting.
+
 ## Architecture
 
 ```
